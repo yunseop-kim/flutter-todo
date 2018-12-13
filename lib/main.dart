@@ -1,70 +1,103 @@
 import 'package:flutter/material.dart';
-import 'package:english_words/english_words.dart';
+import './addItemScreen.dart';
 
-void main() => runApp(TodoApp());
+void main() => runApp(new TodoApp());
 
 class TodoApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Startup Name Generator',
-      home: RandomWords(),
-    );
+    return new MaterialApp(title: 'Todo List', home: new TodoList());
   }
 }
 
-class RandomWordsState extends State<RandomWords> {
-  final _suggestions = <WordPair>[];
-  final _biggerFont = const TextStyle(fontSize: 18.0);
+class TodoList extends StatefulWidget {
+  @override
+  createState() => new TodoListState();
+}
 
-  Widget _buildSuggestions() {
-    return ListView.builder(
-        padding: const EdgeInsets.all(16.0),
-        // The itemBuilder callback is called once per suggested word pairing,
-        // and places each suggestion into a ListTile row.
-        // For even rows, the function adds a ListTile row for the word pairing.
-        // For odd rows, the function adds a Divider widget to visually
-        // separate the entries. Note that the divider may be difficult
-        // to see on smaller devices.
-        itemBuilder: (context, i) {
-          // Add a one-pixel-high divider widget before each row in theListView.
-          if (i.isOdd) return Divider();
+class TodoTile {
+  String title;
+  DateTime date; // = new DateTime.now();
+  bool done; // = false;
 
-          // The syntax "i ~/ 2" divides i by 2 and returns an integer result.
-          // For example: 1, 2, 3, 4, 5 becomes 0, 1, 1, 2, 2.
-          // This calculates the actual number of word pairings in the ListView,
-          // minus the divider widgets.
-          final index = i ~/ 2;
-          // If you've reached the end of the available word pairings...
-          if (index >= _suggestions.length) {
-            // ...then generate 10 more and add them to the suggestions list.
-            _suggestions.addAll(generateWordPairs().take(10));
-          }
-          return _buildRow(_suggestions[index]);
+  TodoTile(String title){
+    this.title = title;
+    this.date = new DateTime.now();
+    this.done = false;
+  }
+}
+
+class TodoListState extends State<TodoList> {
+  List<TodoTile> _todoItems = [];
+
+  Widget _buildToDoList() {
+    return new ListView.builder(itemBuilder: (context, index) {
+      if (index < _todoItems.length) {
+        return _buildToDoItem(_todoItems[index], index);
+      }
+    });
+  }
+
+  Widget _buildToDoItem(TodoTile todo, int index) {
+    return new ListTile(
+      title: Text(todo.title),
+      subtitle: Text(todo.date.toString()),
+      selected: todo.done,
+      onTap: () => _promptRemoveTodoItem(index),
+    );
+  }
+
+  _addTodoItem(TodoTile todo) {
+    setState(() {
+      _todoItems.add(todo);
+    });
+  }
+
+  _promptRemoveTodoItem(int index) {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return new AlertDialog(
+              title: new Text(' "${_todoItems[index].title}" 완료 처리 하시겠습니까?'),
+              actions: <Widget>[
+                new FlatButton(
+                    child: new Text('CANCEL'),
+                    onPressed: () => Navigator.of(context).pop()),
+                new FlatButton(
+                    child: new Text('완료'),
+                    onPressed: () {
+                      _removeTodoItem(index);
+                      Navigator.of(context).pop();
+                    })
+              ]);
         });
   }
 
-  Widget _buildRow(WordPair pair) {
-    return ListTile(
-      title: Text(
-        pair.asPascalCase,
-        style: _biggerFont,
-      ),
-    );
+  _removeTodoItem(int index) {
+    setState(() => _todoItems.elementAt(index).done = true);
+  }
+
+  _navigatorAddItemScreen() async {
+    Map results = await Navigator.of(context).push(new MaterialPageRoute(
+      builder: (BuildContext context) {
+        return AddItemScreen();
+      },
+    ));
+
+    if (results != null && results.containsKey("item")) {
+      _addTodoItem(new TodoTile(results["item"]));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold (
-      appBar: AppBar(
-        title: Text('Startup Name Generator'),
-      ),
-      body: _buildSuggestions(),
+    return new Scaffold(
+      appBar: new AppBar(title: new Text('Todo List')),
+      body: _buildToDoList(),
+      floatingActionButton: new FloatingActionButton(
+          onPressed: _navigatorAddItemScreen,
+          tooltip: '추가',
+          child: new Icon(Icons.add)),
     );
   }
-}
-
-class RandomWords extends StatefulWidget {
-  @override
-  RandomWordsState createState() => new RandomWordsState();
 }
