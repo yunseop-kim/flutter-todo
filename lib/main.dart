@@ -1,7 +1,32 @@
 import 'package:flutter/material.dart';
 import './addItemScreen.dart';
 
-void main() => runApp(new TodoApp());
+void main() => runApp(new TabBarDemo());
+
+class TabBarDemo extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: DefaultTabController(
+        length: 3,
+        child: Scaffold(
+          appBar: AppBar(
+            bottom: TabBar(
+              tabs: [
+                Tab(icon: Icon(Icons.today)),
+                Tab(icon: Icon(Icons.done))
+              ],
+            ),
+            title: Text('Todo List'),
+          ),
+          body: TabBarView(
+            children: [TodoList(), Icon(Icons.directions_transit)],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class TodoApp extends StatelessWidget {
   @override
@@ -17,10 +42,10 @@ class TodoList extends StatefulWidget {
 
 class TodoTile {
   String title;
-  DateTime date; // = new DateTime.now();
-  bool done; // = false;
+  DateTime date;
+  bool done;
 
-  TodoTile(String title){
+  TodoTile(String title) {
     this.title = title;
     this.date = new DateTime.now();
     this.done = false;
@@ -39,11 +64,14 @@ class TodoListState extends State<TodoList> {
   }
 
   Widget _buildToDoItem(TodoTile todo, int index) {
-    return new ListTile(
+    return new CheckboxListTile(
       title: Text(todo.title),
       subtitle: Text(todo.date.toString()),
-      selected: todo.done,
-      onTap: () => _promptRemoveTodoItem(index),
+      value: todo.done,
+      onChanged: (bool value) {
+        setState(() => _todoItems.elementAt(index).done = value);
+      },
+      secondary: const Icon(Icons.info),
     );
   }
 
@@ -51,30 +79,6 @@ class TodoListState extends State<TodoList> {
     setState(() {
       _todoItems.add(todo);
     });
-  }
-
-  _promptRemoveTodoItem(int index) {
-    showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return new AlertDialog(
-              title: new Text(' "${_todoItems[index].title}" 완료 처리 하시겠습니까?'),
-              actions: <Widget>[
-                new FlatButton(
-                    child: new Text('CANCEL'),
-                    onPressed: () => Navigator.of(context).pop()),
-                new FlatButton(
-                    child: new Text('완료'),
-                    onPressed: () {
-                      _removeTodoItem(index);
-                      Navigator.of(context).pop();
-                    })
-              ]);
-        });
-  }
-
-  _removeTodoItem(int index) {
-    setState(() => _todoItems.elementAt(index).done = true);
   }
 
   _navigatorAddItemScreen() async {
@@ -92,7 +96,6 @@ class TodoListState extends State<TodoList> {
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
-      appBar: new AppBar(title: new Text('Todo List')),
       body: _buildToDoList(),
       floatingActionButton: new FloatingActionButton(
           onPressed: _navigatorAddItemScreen,
